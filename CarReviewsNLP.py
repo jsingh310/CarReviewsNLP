@@ -1,8 +1,9 @@
 import os,nltk,csv
 import pandas as pd
 from bs4 import BeautifulSoup
-#import bs4
 nltk.download('vader_lexicon')
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+sid = SentimentIntensityAnalyzer()
 
 data_path = 'cars/data/'
 
@@ -40,18 +41,28 @@ def doc_to_csv(year,file_name):
     
     review_data = pd.DataFrame(csv_data[1:],columns=csv_data[0])
     review_data.insert(1,'doc_id',file_name)
+    review_data.drop_duplicates(inplace=True)
     review_data.to_csv(data_path + str(year) + '/' + file_name + '.csv',index=False)
     
 if __name__ == '__main__':
 
     for file in doc_files_2007:
         doc_to_csv(2007,str(file))
-        
-    test = pd.read_csv(data_path + '2007/2007_mercedes-benz_e-class.csv')
-        
+            
     for file in doc_files_2008:
+        #print(file)
         doc_to_csv(2008,str(file))
     
     for file in doc_files_2009:
-        doc_to_csv(2008,str(file))
+        doc_to_csv(2009,str(file))
+
+review_data = pd.read_csv(data_path + '2009/2009_mercedes-benz_e-class.csv')
+
+# Set thresholds
+thresh_low = 0.4
+thresh_high = 0.75
+
+# polarity scores
+review_data["rating_score"] = [score := sid.polarity_scores(text)["compound"] for text in review_data["text"]]
+review_data["rating"] = ["Negative" if score < thresh_low else "Neutral" if score < thresh_high else "Positive" for score in review_data["rating_score"]]
 
